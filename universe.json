@@ -1,0 +1,173 @@
+{
+  "benchmark": {
+    "ticker": "^OMX",
+    "name": "OMXS30",
+    "currency": "SEK"
+  },
+  "fx": {
+    "DKK": "DKKSEK=X",
+    "NOK": "NOKSEK=X",
+    "EUR": "EURSEK=X"
+  },
+  "default_selection": [
+    "INVE-B.ST",
+    "ATCO-A.ST",
+    "VOLV-B.ST",
+    "ASSA-B.ST",
+    "NOVO-B.CO",
+    "DSV.CO",
+    "EQNR.OL",
+    "DNB.OL",
+    "SAMPO.HE",
+    "KNEBV.HE"
+  ],
+  "stocks": [
+    {
+      "ticker": "INVE-B.ST",
+      "name": "Investor",
+      "country": "SE",
+      "sector": "Financials",
+      "currency": "SEK"
+    },
+    {
+      "ticker": "ATCO-A.ST",
+      "name": "Atlas Copco",
+      "country": "SE",
+      "sector": "Industrials",
+      "currency": "SEK"
+    },
+    {
+      "ticker": "VOLV-B.ST",
+      "name": "Volvo",
+      "country": "SE",
+      "sector": "Industrials",
+      "currency": "SEK"
+    },
+    {
+      "ticker": "ASSA-B.ST",
+      "name": "Assa Abloy",
+      "country": "SE",
+      "sector": "Industrials",
+      "currency": "SEK"
+    },
+    {
+      "ticker": "SAND.ST",
+      "name": "Sandvik",
+      "country": "SE",
+      "sector": "Industrials",
+      "currency": "SEK"
+    },
+    {
+      "ticker": "HEXA-B.ST",
+      "name": "Hexagon",
+      "country": "SE",
+      "sector": "Technology",
+      "currency": "SEK"
+    },
+    {
+      "ticker": "ERIC-B.ST",
+      "name": "Ericsson",
+      "country": "SE",
+      "sector": "Technology",
+      "currency": "SEK"
+    },
+    {
+      "ticker": "SEB-A.ST",
+      "name": "SEB",
+      "country": "SE",
+      "sector": "Financials",
+      "currency": "SEK"
+    },
+    {
+      "ticker": "HM-B.ST",
+      "name": "H&M",
+      "country": "SE",
+      "sector": "Consumer",
+      "currency": "SEK"
+    },
+    {
+      "ticker": "EVO.ST",
+      "name": "Evolution",
+      "country": "SE",
+      "sector": "Consumer",
+      "currency": "SEK"
+    },
+    {
+      "ticker": "NOVO-B.CO",
+      "name": "Novo Nordisk",
+      "country": "DK",
+      "sector": "Health Care",
+      "currency": "DKK"
+    },
+    {
+      "ticker": "DSV.CO",
+      "name": "DSV",
+      "country": "DK",
+      "sector": "Industrials",
+      "currency": "DKK"
+    },
+    {
+      "ticker": "MAERSK-B.CO",
+      "name": "A.P. Møller-Mærsk",
+      "country": "DK",
+      "sector": "Industrials",
+      "currency": "DKK"
+    },
+    {
+      "ticker": "ORSTED.CO",
+      "name": "Ørsted",
+      "country": "DK",
+      "sector": "Utilities",
+      "currency": "DKK"
+    },
+    {
+      "ticker": "EQNR.OL",
+      "name": "Equinor",
+      "country": "NO",
+      "sector": "Energy",
+      "currency": "NOK"
+    },
+    {
+      "ticker": "DNB.OL",
+      "name": "DNB Bank",
+      "country": "NO",
+      "sector": "Financials",
+      "currency": "NOK"
+    },
+    {
+      "ticker": "TEL.OL",
+      "name": "Telenor",
+      "country": "NO",
+      "sector": "Telecom",
+      "currency": "NOK"
+    },
+    {
+      "ticker": "SAMPO.HE",
+      "name": "Sampo",
+      "country": "FI",
+      "sector": "Financials",
+      "currency": "EUR"
+    },
+    {
+      "ticker": "NOKIA.HE",
+      "name": "Nokia",
+      "country": "FI",
+      "sector": "Technology",
+      "currency": "EUR"
+    },
+    {
+      "ticker": "NESTE.HE",
+      "name": "Neste",
+      "country": "FI",
+      "sector": "Energy",
+      "currency": "EUR"
+    },
+    {
+      "ticker": "KNEBV.HE",
+      "name": "Kone",
+      "country": "FI",
+      "sector": "Industrials",
+      "currency": "EUR"
+    }
+  ]
+}
