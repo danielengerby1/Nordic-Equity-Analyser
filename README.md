@@ -32,7 +32,7 @@ years of data (a walk-forward test):
 | Out of sample, Nov 2018 – Nov 2026 (10y data) | CAGR | Volatility | Sharpe | Max DD |
 |:--|--:|--:|--:|--:|
 | **Walk-forward max Sharpe (no hindsight)** | **16.7%** | 19.0% | **0.80** | −27.2% |
-| Max Sharpe with hindsight | 21.0% | 17.8% | 1.04 | −34.8% |
+| Max Sharpe with hindsight | 20.9% | 17.8% | 1.04 | −34.9% |
 | Equal weight | 17.7% | 16.8% | 0.93 | −34.0% |
 | OMXS30 total return | 13.4% | 18.0% | 0.67 | −31.8% |
 
