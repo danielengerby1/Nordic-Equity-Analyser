@@ -93,6 +93,7 @@ export default function Dashboard() {
           <a href={SITE.repo}>Source code</a>
           <a href="#methodology">Methodology</a>
           <a href={SITE.linkedin || SITE.githubProfile}>Built by {SITE.author}</a>
+          <a href={SITE.sibling.url}>{SITE.sibling.name}</a>
           {a && <button className="linkbtn" onClick={printTearsheet}>Download PDF tearsheet</button>}
         </div>
         <div className="print-only small">
