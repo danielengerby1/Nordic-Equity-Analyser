@@ -4,6 +4,12 @@
     "name": "OMXS30",
     "currency": "SEK"
   },
+  "benchmark_tr": {
+    "ticker": "XACT-OMXS30.ST",
+    "name": "OMXS30 total return",
+    "note": "XACT OMXS30 ETF (accumulating, dividends reinvested, 0.10% fee)",
+    "currency": "SEK"
+  },
   "fx": {
     "DKK": "DKKSEK=X",
     "NOK": "NOKSEK=X",

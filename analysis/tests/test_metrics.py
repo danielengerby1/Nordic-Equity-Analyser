@@ -76,3 +76,18 @@ def test_fixture_is_current():
     m = compute_metrics(pd.Series(fx["prices"], index=idx), pd.Series(fx["benchmark"], index=idx), fx["rf"])
     for k, v in fx["expected"].items():
         assert m[k] == pytest.approx(v, rel=1e-12)
+
+
+def test_walk_forward_uses_only_past_data():
+    from nordic_screener.backtest import walk_forward
+    rng = np.random.default_rng(5)
+    idx = pd.bdate_range("2020-01-01", periods=901)
+    rets = rng.normal(0.0004, 0.01, (900, 3))
+    prices = pd.DataFrame(100 * np.vstack([np.ones(3), np.cumprod(1 + rets, axis=0)]), index=idx, columns=list("ABC"))
+    wf = walk_forward(prices, 0.02, samples=300)
+    assert len(wf["path"]) == 900 - 504 + 1 and wf["path"].iloc[0] == 1
+    flipped = prices.copy()
+    flipped.iloc[506:] = flipped.iloc[506:] * np.linspace(1, 3, len(flipped) - 506)[:, None]
+    wf2 = walk_forward(flipped, 0.02, samples=300)
+    assert np.allclose(wf["weights"].iloc[0], wf2["weights"].iloc[0])
+    assert walk_forward(prices.iloc[:700], 0.02) is None
