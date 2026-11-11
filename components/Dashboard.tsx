@@ -10,6 +10,7 @@ import { SITE } from "@/lib/site";
 import { Frontier, GrowthChart, Heatmap } from "./Charts";
 import { Builder, HowBuilt, Methodology, OutOfSample, Stress, Weights } from "./Sections";
 import { num, pct } from "./ui";
+import { Term } from "./Term";
 
 const RANGES = ["1y", "3y", "5y", "10y"] as const;
 const RANGE_LABEL: Record<(typeof RANGES)[number], string> = { "1y": "1 year", "3y": "3 years", "5y": "5 years", "10y": "10 years" };
@@ -171,9 +172,9 @@ export default function Dashboard() {
                     <th className="rank">#</th>
                     <th>Company</th>
                     {COLUMNS.map((c) => (
-                      <th key={c.key} title={c.title} className={c.mobile ? "" : "hide-sm"}
+                      <th key={c.key} className={c.mobile ? "" : "hide-sm"}
                         aria-sort={sortKey === c.key ? "descending" : undefined} onClick={() => setSortKey(c.key)}>
-                        {c.label}{sortKey === c.key ? " ▾" : ""}
+                        <Term k={c.key}>{c.label}</Term>{sortKey === c.key ? " ▾" : ""}
                       </th>
                     ))}
                   </tr>
@@ -190,7 +191,7 @@ export default function Dashboard() {
                   {[a.bench, ...(a.benchPrice ? [a.benchPrice] : [])].map((b) => (
                     <tr key={b.ticker} className="ref">
                       <td className="rank"></td>
-                      <td>{b.name} <span className="small hide-sm">benchmark</span></td>
+                      <td>{b.totalReturn ? <Term k="benchmark">{b.name}</Term> : b.name} <span className="small hide-sm">benchmark</span></td>
                       {COLUMNS.map((c) => <td key={c.key} className={c.mobile ? "" : "hide-sm"}>{c.fmt(b.metrics[c.key])}</td>)}
                     </tr>
                   ))}
@@ -244,13 +245,13 @@ function Kpis({ a }: { a: Analysis }) {
   };
   return (
     <div className="kpis">
-      <div className="kpi"><div className="k">Max Sharpe · CAGR <span className="tag">hindsight</span></div><div className="v">{pct(p.cagr)}</div>
+      <div className="kpi"><div className="k"><Term k="maxSharpe">Max Sharpe</Term> · <Term k="cagr">CAGR</Term> <span className="tag">hindsight</span></div><div className="v">{pct(p.cagr)}</div>
         <div className="d">{diff(p.cagr, b.cagr)} vs index {pct(b.cagr)}</div></div>
-      <div className="kpi"><div className="k">Max Sharpe · Sharpe ratio</div><div className="v">{num(p.sharpe)}</div>
+      <div className="kpi"><div className="k"><Term k="maxSharpe">Max Sharpe</Term> · <Term k="sharpe">Sharpe ratio</Term></div><div className="v">{num(p.sharpe)}</div>
         <div className="d">{diff(p.sharpe, b.sharpe, false)} vs index {num(b.sharpe)}</div></div>
-      <div className="kpi"><div className="k">Max drawdown</div><div className="v">{pct(p.maxDrawdown)}</div>
+      <div className="kpi"><div className="k"><Term k="maxDrawdown">Max drawdown</Term></div><div className="v">{pct(p.maxDrawdown)}</div>
         <div className="d">{diff(p.maxDrawdown, b.maxDrawdown)} vs index {pct(b.maxDrawdown)}</div></div>
-      <div className="kpi accent"><div className="k">Walk-forward · CAGR <span className="tag">no hindsight</span></div>
+      <div className="kpi accent"><div className="k"><Term k="walkForward">Walk-forward</Term> · <Term k="cagr">CAGR</Term> <span className="tag">no hindsight</span></div>
         {o ? <><div className="v">{pct(o.oos.cagr)}</div>
           <div className="d">{diff(o.oos.cagr, o.bench.cagr)} vs index {pct(o.bench.cagr)} same window</div></>
           : <><div className="v">–</div><div className="d">Needs 3Y+ of data</div></>}

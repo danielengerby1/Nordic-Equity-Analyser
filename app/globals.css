@@ -175,6 +175,14 @@ details[open] summary::after { content: " ▾"; }
 .print-only { display: none; }
 .show-sm { display: none; }
 
+/* ---- Metric explanations ---- */
+.term { text-decoration: underline dotted var(--muted); text-underline-offset: 3px; cursor: help; outline: none; }
+.term:focus-visible { outline: 2px solid var(--series-1); outline-offset: 2px; border-radius: 2px; }
+.term-box { position: fixed; z-index: 50; width: 280px; padding: 10px 12px; border-radius: 8px; background: var(--surface-1); color: var(--text-secondary);
+  border: 1px solid var(--border); box-shadow: 0 6px 24px rgba(0,0,0,0.14); font-size: 13px; line-height: 1.45; text-align: left;
+  text-transform: none; letter-spacing: 0; font-weight: 400; white-space: normal; pointer-events: none; }
+.term-box b { display: block; color: var(--text-primary); margin-bottom: 4px; font-size: 13px; }
+
 /* ---- Phones ---- */
 @media (max-width: 640px) {
   :root { --heat-label: 76px; }
@@ -207,7 +215,8 @@ details[open] summary::after { content: " ▾"; }
   :root { color-scheme: light; --page: #fff; --surface-1: #fff; --text-primary: #0b0b0b; --text-secondary: #52514e; --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.15); --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100; --accent-wash: rgba(42,120,214,0.08); }
   html, body { background: #fff; font-size: 11px; }
   .wrap { max-width: none; padding: 0; }
-  .no-print, footer, .loading { display: none !important; }
+  .no-print, footer, .loading, .term-box { display: none !important; }
+  .term { text-decoration: none; }
   .print-only { display: block; margin-top: 4px; }
   h1 { font-size: 20px; }
   .lede { font-size: 11px; }

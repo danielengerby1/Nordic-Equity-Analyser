@@ -6,6 +6,20 @@ import type { Metrics } from "@/lib/metrics";
 import { BENCHMARK_TR } from "@/lib/universe";
 import { GrowthChart } from "./Charts";
 import { num, pct, signed } from "./ui";
+import { Term, type TermKey } from "./Term";
+
+/** Glossary entry for a strategy row/column label, if there is one. */
+function termFor(name: string): TermKey | null {
+  if (name.startsWith("Walk-forward")) return "walkForward";
+  if (name.startsWith("Max Sharpe")) return "maxSharpe";
+  if (name.startsWith("Equal weight")) return "equal";
+  if (name.includes("total return") || name === "Index") return "benchmark";
+  return null;
+}
+const Label = ({ name }: { name: string }) => {
+  const k = termFor(name);
+  return k ? <Term k={k}>{name}</Term> : <>{name}</>;
+};
 
 const monthYear = (d: string) =>
   new Date(`${d}T00:00:00Z`).toLocaleDateString("en-GB", { month: "short", year: "numeric", timeZone: "UTC" });
@@ -16,11 +30,11 @@ export function MetricsRows({ rows, highlight }: { rows: { name: string; m: Metr
   return (
     <div className="tbl-wrap">
       <table className="compact">
-        <thead><tr><th>Strategy</th><th>CAGR</th><th>Volatility</th><th>Sharpe</th><th>Max DD</th></tr></thead>
+        <thead><tr><th>Strategy</th><th><Term k="cagr">CAGR</Term></th><th><Term k="volatility">Volatility</Term></th><th><Term k="sharpe">Sharpe</Term></th><th><Term k="maxDrawdown">Max DD</Term></th></tr></thead>
         <tbody>
           {rows.map((r) => (
             <tr key={r.name} className={r.name === highlight ? "hl" : ""}>
-              <td>{r.name}{r.note && <span className="small"> {r.note}</span>}</td>
+              <td><Label name={r.name} />{r.note && <span className="small"> {r.note}</span>}</td>
               <td>{pct(r.m.cagr)}</td><td>{pct(r.m.volatility)}</td><td>{num(r.m.sharpe)}</td><td>{pct(r.m.maxDrawdown)}</td>
             </tr>
           ))}
@@ -177,7 +191,7 @@ export function Stress({ a, user }: { a: Analysis; user?: number[] }) {
       <div className="grid2 tight">
         <div className="tbl-wrap">
           <table className="compact">
-            <thead><tr><th>Index drawdown</th>{cols.map((c) => <th key={c.name}>{c.name === a.bench.name ? "Index" : c.name}</th>)}</tr></thead>
+            <thead><tr><th><Term k="maxDrawdown">Index drawdown</Term></th>{cols.map((c) => <th key={c.name}><Label name={c.name === a.bench.name ? "Index" : c.name} /></th>)}</tr></thead>
             <tbody>
               {a.episodes.map((e) => (
                 <tr key={e.peak}>
@@ -192,7 +206,7 @@ export function Stress({ a, user }: { a: Analysis; user?: number[] }) {
         </div>
         <div className="tbl-wrap">
           <table className="compact">
-            <thead><tr><th>Year</th>{cols.map((c) => <th key={c.name}>{c.name === a.bench.name ? "Index" : c.name}</th>)}</tr></thead>
+            <thead><tr><th>Year</th>{cols.map((c) => <th key={c.name}><Label name={c.name === a.bench.name ? "Index" : c.name} /></th>)}</tr></thead>
             <tbody>
               {years[0].map((y, i) => (
                 <tr key={y.year}>
