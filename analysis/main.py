@@ -43,7 +43,7 @@ def main() -> None:
     paths = {
         "Max-Sharpe portfolio": portfolio_path(prices, opt["max_sharpe"]["weights"]),
         "Equal weight": portfolio_path(prices, opt["equal"]["weights"]),
-        "OMXS30 (price index)": bench / bench.iloc[0],
+        "OMXS30 total return": bench / bench.iloc[0],
     }
     single = opt["cloud"].iloc[: len(tickers)][["ret", "vol"]].set_axis([names[t] for t in tickers])
     plots.performance(paths, out / "performance.png")

@@ -8,7 +8,36 @@ import { calendarYears, drawdownEpisodes, periodReturn, type Episode } from "./s
 
 export interface StockResult extends Stock { metrics: Metrics; path: number[] }
 
-export interface Benchmark { ticker: string; name: string; totalReturn: boolean; metrics: Metrics; path: number[] }
+export interface Benchmark {
+  ticker: string; name: string; totalReturn: boolean; metrics: Metrics; path: number[];
+  /** etf = Xact ETF prices; hybrid = index moves + dividend drift calibrated to the ETF; price = price index. */
+  method: "etf" | "hybrid" | "price";
+}
+
+/**
+ * OMXS30 total-return path on the aligned calendar. Yahoo's history for the ETF has gaps
+ * in some years; forward-filling those would create flat days and distort volatility, so with
+ * patchy coverage we take the index's daily moves plus a constant dividend drift calibrated
+ * so the path matches the ETF's own growth between its first and last observations.
+ */
+export function totalReturnPath(dates: string[], index: number[], tr: Series | undefined) {
+  if (!tr) return null;
+  const obs = dates.map((d) => tr[d]);
+  const seen = obs.filter((v) => v != null).length;
+  if (seen / dates.length >= 0.97) {
+    const out: number[] = [];
+    let last: number | undefined = Object.keys(tr).filter((d) => d <= dates[0]).sort().map((d) => tr[d]).at(-1);
+    for (const v of obs) { if (v != null) last = v; out.push(last ?? NaN); }
+    const first = out.findIndex((v) => Number.isFinite(v));
+    if (first === 0) return { path: rebase(out), method: "etf" as const };
+  }
+  const i0 = obs.findIndex((v) => v != null);
+  let i1 = -1;
+  for (let i = obs.length - 1; i >= 0; i--) if (obs[i] != null) { i1 = i; break; }
+  if (i0 < 0 || i1 - i0 < 252) return null;
+  const drift = ((obs[i1]! / obs[i0]!) / (index[i1] / index[i0])) ** (1 / (i1 - i0));
+  return { path: index.map((v, i) => (v / index[0]) * drift ** i), method: "hybrid" as const };
+}
 
 export interface Analysis {
   dates: string[];
@@ -36,12 +65,9 @@ export interface Analysis {
 export function analyze(tickers: string[], raw: Record<string, Series>, rf: number, sekAdjust: boolean): Analysis | null {
   const missing = tickers.filter((t) => !raw[t]);
   const stocks = UNIVERSE.filter((u) => tickers.includes(u.ticker) && raw[u.ticker]);
-  const hasTR = !!raw[BENCHMARK_TR.ticker], hasPrice = !!raw[BENCHMARK.ticker];
-  if (stocks.length < 2 || (!hasTR && !hasPrice)) return null;
+  if (stocks.length < 2 || !raw[BENCHMARK.ticker]) return null;
 
-  const needed: Record<string, Series> = {};
-  if (hasTR) needed[BENCHMARK_TR.ticker] = raw[BENCHMARK_TR.ticker];
-  if (hasPrice) needed[BENCHMARK.ticker] = raw[BENCHMARK.ticker];
+  const needed: Record<string, Series> = { [BENCHMARK.ticker]: raw[BENCHMARK.ticker] };
   for (const s of stocks) {
     needed[s.ticker] = raw[s.ticker];
     if (sekAdjust && s.currency !== "SEK") {
@@ -50,14 +76,14 @@ export function analyze(tickers: string[], raw: Record<string, Series>, rf: numb
       needed[fx] = raw[fx];
     }
   }
-  const calendar = [...stocks.map((s) => s.ticker), ...(hasPrice ? [BENCHMARK.ticker] : [BENCHMARK_TR.ticker])];
-  const { dates, prices } = alignSeries(needed, calendar);
+  const { dates, prices } = alignSeries(needed, [...stocks.map((s) => s.ticker), BENCHMARK.ticker]);
   if (dates.length < 60) return null;
 
   const sekPrices = stocks.map((s) =>
     sekAdjust && s.currency !== "SEK" ? toSEK(prices[s.ticker], prices[FX_TICKERS[s.currency]]) : prices[s.ticker]);
-  const mainTicker = hasTR ? BENCHMARK_TR.ticker : BENCHMARK.ticker;
-  const benchPrices = prices[mainTicker];
+  const index = prices[BENCHMARK.ticker];
+  const tr = totalReturnPath(dates, index, raw[BENCHMARK_TR.ticker]);
+  const benchPrices = tr ? tr.path : rebase(index);
   const metricsOf = (p: number[]) => computeMetrics(p, benchPrices, dates, rf);
   const rets = sekPrices.map(dailyReturns);
 
@@ -67,13 +93,12 @@ export function analyze(tickers: string[], raw: Record<string, Series>, rf: numb
     equal: portfolioPath(rets, opt.equal.weights),
     minVol: portfolioPath(rets, opt.minVol.weights),
   };
-  const bench: Benchmark = {
-    ticker: mainTicker, name: hasTR ? BENCHMARK_TR.name : `${BENCHMARK.name} (price index)`, totalReturn: hasTR,
-    metrics: metricsOf(benchPrices), path: rebase(benchPrices),
-  };
-  const benchPrice: Benchmark | null = hasTR && hasPrice ? {
-    ticker: BENCHMARK.ticker, name: `${BENCHMARK.name} price index`, totalReturn: false,
-    metrics: metricsOf(prices[BENCHMARK.ticker]), path: rebase(prices[BENCHMARK.ticker]),
+  const bench: Benchmark = tr
+    ? { ticker: BENCHMARK_TR.ticker, name: BENCHMARK_TR.name, totalReturn: true, method: tr.method, metrics: metricsOf(benchPrices), path: benchPrices }
+    : { ticker: BENCHMARK.ticker, name: `${BENCHMARK.name} (price index)`, totalReturn: false, method: "price", metrics: metricsOf(benchPrices), path: benchPrices };
+  const benchPrice: Benchmark | null = tr ? {
+    ticker: BENCHMARK.ticker, name: `${BENCHMARK.name} price index`, totalReturn: false, method: "price",
+    metrics: metricsOf(index), path: rebase(index),
   } : null;
 
   // Out-of-sample: 2-year lookback, quarterly rebalancing.

@@ -91,3 +91,15 @@ def test_walk_forward_uses_only_past_data():
     wf2 = walk_forward(flipped, 0.02, samples=300)
     assert np.allclose(wf["weights"].iloc[0], wf2["weights"].iloc[0])
     assert walk_forward(prices.iloc[:700], 0.02) is None
+
+
+def test_total_return_benchmark_hybrid_matches_etf_growth():
+    from nordic_screener.data import total_return_benchmark
+    idx = pd.bdate_range("2020-01-01", periods=400)
+    index = pd.Series(100 * 1.0002 ** np.arange(400), index=idx)
+    etf_full = pd.Series(50 * 1.0003 ** np.arange(400), index=idx)
+    assert np.isclose(total_return_benchmark(index, etf_full).iloc[-1], 1.0003 ** 399)
+    gappy = etf_full.iloc[::3]
+    tr = total_return_benchmark(index, gappy)
+    assert np.isclose(tr.iloc[399] / tr.iloc[0], 1.0003 ** 399)
+    assert np.isclose(total_return_benchmark(index, None).iloc[-1], index.iloc[-1] / index.iloc[0])

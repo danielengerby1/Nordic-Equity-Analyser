@@ -1,69 +1,92 @@
 # Nordic Equity Risk Analyzer
 
-**Automated Nordic equity screener and risk-adjusted portfolio optimizer, in SEK.**
+[![tests](https://github.com/danielengerby1/Nordic-Equity-Analyser/actions/workflows/tests.yml/badge.svg)](https://github.com/danielengerby1/Nordic-Equity-Analyser/actions/workflows/tests.yml)
+
+**Screens 21 Nordic large caps on risk-adjusted return in SEK, builds a max-Sharpe portfolio, and then tests
+honestly whether that would have worked without hindsight.**
 
 **Live dashboard: [nordic-equity-analyser.vercel.app](https://nordic-equity-analyser.vercel.app)**
 
-## Why I built it
+<p>
+  <img src="docs/dashboard.png" alt="Dashboard" width="74%">
+  <img src="docs/mobile.png" alt="Dashboard on a phone" width="24%">
+</p>
+
+## The question
 
 Headline returns don't tell you much. A stock that rose 20% with 40% volatility and a 50% drawdown is a very
-different holding from one that rose 12% smoothly. This tool ranks 21 Nordic large caps on **risk-adjusted**
-return, from the point of view of a **Swedish investor**, and shows how much diversification across the region
-could have improved the risk/return trade-off compared with OMXS30.
+different holding from one that rose 12% smoothly. This project asks two things:
 
-It comes in two parts:
+1. **Which Nordic large caps delivered the best return per unit of risk, for a Swedish (SEK) investor?**
+2. **Does mean-variance optimisation beat simple diversification once you remove hindsight?**
 
-| | What it is | Stack |
-|---|---|---|
-| **Web dashboard** (`app/`, `lib/`) | Interactive site: pick stocks, period and risk-free rate; everything recalculates in the browser | Next.js, TypeScript, Recharts, Vercel |
-| **Analysis package** (`analysis/`) | The same analysis as a Python package, CLI and Jupyter notebook | Python, pandas, NumPy, yfinance, Matplotlib |
+## Key findings (data to 11 Nov 2026, SEK, risk-free rate 2%)
 
-Both implement identical metric definitions, and a shared test fixture (`tests/fixture.json`) checks that the
-TypeScript and Python numbers agree to nine decimal places.
+**1. With hindsight, optimisation looks spectacular.** Over 5 years, the max-Sharpe mix of 10 default stocks
+(mostly Investor, Equinor and Sampo) returned 19.6% a year with a Sharpe of 1.13. OMXS30 total return did
+10.3% with a Sharpe of 0.54.
 
-## Results: 5 years to 11 Nov 2026 (SEK, rf = 2%)
+**2. Without hindsight, most of that edge disappears.** Re-optimising every quarter using only the previous two
+years of data (a walk-forward test):
+
+| Out of sample, Nov 2018 – Nov 2026 (10y data) | CAGR | Volatility | Sharpe | Max DD |
+|:--|--:|--:|--:|--:|
+| **Walk-forward max Sharpe (no hindsight)** | **16.7%** | 19.0% | **0.80** | −27.2% |
+| Max Sharpe with hindsight | 21.0% | 17.8% | 1.04 | −34.8% |
+| Equal weight | 17.7% | 16.8% | 0.93 | −34.0% |
+| OMXS30 total return | 13.4% | 18.0% | 0.67 | −31.8% |
+
+| Out of sample, Oct 2023 – Nov 2026 (5y data) | CAGR | Volatility | Sharpe | Max DD |
+|:--|--:|--:|--:|--:|
+| **Walk-forward max Sharpe (no hindsight)** | **9.1%** | 16.9% | **0.48** | −26.8% |
+| Max Sharpe with hindsight | 23.8% | 13.1% | 1.53 | −16.1% |
+| Equal weight | 15.5% | 13.6% | 0.98 | −20.6% |
+| OMXS30 total return | 20.4% | 15.7% | 1.13 | −21.7% |
+
+Over the longer window the strategy beat the index, but **a naive equal-weight portfolio did better in both
+windows**. Expected returns estimated from two years of noisy data make the optimiser chase recent winners. This
+is the well-known result of DeMiguel, Garlappi & Uppal (2009), reproduced here on Nordic data.
+
+![Walk-forward backtest](docs/walk_forward.png)
+
+**3. Stock-level picture (5 years):**
 
 | | CAGR | Volatility | Sharpe | Sortino | Max DD | Beta |
 |:--|--:|--:|--:|--:|--:|--:|
-| Investor | 18.0% | 20.2% | 0.81 | 1.18 | −30.6% | 1.05 |
-| DNB Bank | 17.1% | 22.5% | 0.72 | 0.99 | −18.2% | 0.57 |
-| Volvo | 16.5% | 25.1% | 0.65 | 0.95 | −28.5% | 1.16 |
-| Equinor | 20.1% | 34.8% | 0.64 | 0.92 | −40.1% | −0.09 |
-| Sampo | 12.7% | 18.8% | 0.62 | 0.87 | −16.0% | 0.43 |
-| Assa Abloy | 9.9% | 22.9% | 0.43 | 0.63 | −27.1% | 1.06 |
-| Atlas Copco | 8.5% | 29.8% | 0.35 | 0.52 | −42.1% | 1.43 |
-| Kone | 5.0% | 29.3% | 0.24 | 0.37 | −33.7% | 0.73 |
-| DSV | 1.1% | 32.0% | 0.13 | 0.19 | −39.8% | 0.89 |
-| Novo Nordisk | −1.8% | 39.8% | 0.11 | 0.15 | −77.9% | 0.37 |
-| *OMXS30 (price index)* | *7.4%* | *16.6%* | *0.39* | *0.56* | *−26.9%* | *1.00* |
+| Investor | 18.0% | 20.2% | 0.81 | 1.18 | −30.6% | 1.01 |
+| DNB Bank | 17.1% | 22.5% | 0.72 | 0.99 | −18.2% | 0.55 |
+| Volvo | 16.5% | 25.1% | 0.65 | 0.95 | −28.5% | 1.13 |
+| Equinor | 20.1% | 34.8% | 0.64 | 0.92 | −40.1% | −0.10 |
+| Sampo | 12.7% | 18.8% | 0.62 | 0.87 | −16.0% | 0.42 |
+| Assa Abloy | 9.9% | 22.9% | 0.43 | 0.63 | −27.1% | 1.02 |
+| Atlas Copco | 8.5% | 29.8% | 0.35 | 0.52 | −42.1% | 1.38 |
+| Kone | 5.0% | 29.3% | 0.24 | 0.37 | −33.7% | 0.69 |
+| DSV | 1.1% | 32.0% | 0.13 | 0.19 | −39.8% | 0.85 |
+| Novo Nordisk | −1.8% | 39.8% | 0.11 | 0.15 | −77.9% | 0.35 |
+| *OMXS30 total return* | *10.3%* | *17.0%* | *0.54* | *0.77* | *−26.4%* | *1.00* |
 
-**Takeaways**
-- Best risk-adjusted performer was **Investor**: index-like beta, but more than double OMXS30's return.
-- **Equinor** had the highest CAGR but needed 35% volatility to get it. Its near-zero beta to OMXS30 makes it a
-  strong diversifier, which is why the optimiser gives it a large weight.
-- **Novo Nordisk** went from star to worst performer: a 78% drawdown in SEK. Its frontier dot sits at about +7%
-  "expected" (arithmetic) return despite a negative CAGR. The gap is volatility drag.
-- The max-Sharpe mix (Investor, Equinor, Sampo, DNB, Volvo) reached a Sharpe of about 1.1 at lower volatility than
-  OMXS30, but those weights were chosen with hindsight (see Limitations).
+- **Investor** had the best risk-adjusted return: index-like beta with almost double the index's CAGR.
+- **Equinor** barely moves with OMXS30 (beta −0.10), so the optimiser leans on it as a diversifier.
+- **Novo Nordisk** fell 78% from peak in SEK. On the frontier it still shows about +7% "expected" (arithmetic)
+  return despite a negative CAGR: that gap is volatility drag.
 
-![Growth of 1 SEK](docs/performance.png)
-![Efficient frontier](docs/frontier.png)
-![Correlation heatmap](docs/correlation.png)
+<p>
+  <img src="docs/performance.png" alt="Growth of 1 SEK" width="49%">
+  <img src="docs/frontier.png" alt="Efficient frontier" width="49%">
+</p>
 
-## What it does
+## What the dashboard does
 
-1. **Collects data**: daily adjusted closes (dividends reinvested) for 21 large caps across Stockholm,
-   Copenhagen, Oslo and Helsinki, plus OMXS30 and DKK/NOK/EUR→SEK FX rates, from Yahoo Finance.
-2. **Cleans it properly**:
-   - **SEK conversion.** A Swedish investor holding Novo Nordisk carries DKK risk, so returns are measured in SEK.
-   - **Calendar alignment.** The four exchanges close on different holidays. Prices are forward-filled across a
-     closed market's holiday instead of `dropna()`, which would silently delete every country's holidays
-     from every stock.
-3. **Computes risk metrics** for each stock: CAGR, annualised volatility, Sharpe, Sortino, max drawdown and beta to OMXS30.
-4. **Screens and ranks** on any of them (Sharpe by default).
-5. **Optimises a portfolio**: samples 4,000+ long-only portfolios to draw the efficient frontier and find the
-   max-Sharpe and min-volatility mixes, then backtests them against OMXS30.
-6. **Visualises**: growth-of-1-SEK chart, efficient frontier, portfolio weights and a correlation heatmap.
+- **Key findings** written out in plain English for whatever stocks and period you pick
+- **Screening table** ranked by Sharpe, Sortino, CAGR, volatility, max drawdown or beta, in SEK or local currency
+- **Growth of 1 SEK** for the max-Sharpe, equal-weight and your own portfolio against OMXS30 total return
+- **Build your own portfolio** with sliders and live metrics
+- **Out-of-sample backtest** as above, plus the weights the strategy would hold today
+- **Stress test**: how each portfolio did during the index's worst drawdowns (COVID 2020, 2022, April 2025)
+  and by calendar year
+- **Efficient frontier**, optimal weights and a **correlation heatmap**
+- **PDF tearsheet**: a three-page print-ready summary
+- Works on phones, and link previews show live numbers
 
 ## Methodology
 
@@ -73,75 +96,85 @@ TypeScript and Python numbers agree to nine decimal places.
 | Volatility | sample std. dev. of daily returns × √252 |
 | Sharpe | mean daily excess return ÷ std. dev. of daily returns × √252; rf converted to a daily rate geometrically |
 | Sortino | as Sharpe, but dividing by downside deviation (returns below rf only) |
-| Max drawdown | largest peak-to-trough fall in the price series |
-| Beta | cov(stock, OMXS30) ÷ var(OMXS30), daily returns |
+| Max drawdown | largest peak-to-trough fall |
+| Beta | cov(stock, benchmark) ÷ var(benchmark), daily returns |
 
-**A common mistake avoided:** `mean(daily return) × 252` is an *arithmetic* annual return, not CAGR. With
-volatile returns it overstates real growth: +60% followed by −50% has a positive arithmetic mean but loses
-money. The unit tests include exactly this case.
+**Data.** Daily adjusted closes (dividends reinvested) from Yahoo Finance, converted to SEK with daily
+DKK/NOK/EUR rates. A Swedish investor holding Novo Nordisk carries DKK risk, so that is included.
 
-**Optimiser.** Long-only, fully invested mean-variance portfolios drawn by seeded Monte Carlo sampling (flat
-Dirichlet, plus sharpened samples to reach the concentrated edges of the frontier). With 20+ stocks, random
-samples thin out near the optimum, so the best max-Sharpe and min-volatility samples are polished with a local
-search that shifts weight between pairs of stocks. Sampling keeps the method transparent and draws the whole
-feasible set, which a quadratic solver would not.
+**Benchmark.** OMXS30 total return, using the accumulating Xact OMXS30 ETF (dividends reinvested, 0.10% fee).
+Yahoo's history for the ETF has gaps in 2017–2019, so when coverage is below 97% the benchmark uses the index's
+daily moves plus a constant dividend drift calibrated to the ETF's own growth. The price index alone would
+understate the benchmark by its ~3% dividend yield.
 
-**Calendar detail.** FX trades on Sundays; equities don't. The trading calendar is built from equity dates
-only (FX is forward-filled onto it), otherwise every stock would get fake zero-return Sundays that understate
-volatility and correlation.
+**Trading calendar.** The four exchanges close on different holidays, so prices are forward-filled across a
+closed market's holiday instead of `dropna()`, which would silently delete every country's holidays from every
+stock. The calendar is built from equity dates only: FX trades on Sundays, and including those dates added fake
+zero-return days that understated volatility (a bug found and fixed while testing on live data).
 
-### Limitations (read before drawing conclusions)
+**CAGR, not arithmetic return.** `mean(daily return) × 252` overstates growth when returns are volatile:
++60% then −50% has a positive arithmetic mean but loses money. The unit tests include exactly this case.
 
-- **In-sample.** The max-Sharpe weights are chosen with hindsight on the same data they're evaluated on, so the
-  backtest flatters them. A walk-forward test (fit on one window, evaluate on the next) is the natural next step.
+**Optimiser.** Long-only, fully invested mean-variance portfolios: seeded Monte Carlo sampling (flat Dirichlet,
+plus sharpened samples for the concentrated edges), then a local search that polishes the best samples. Without
+the polish, adding stocks made the reported optimum *worse*, which is impossible at the true optimum.
+
+**Walk-forward test.** A 504-trading-day (≈2-year) estimation window, re-optimised every 63 days (≈quarterly),
+with weights held and rebalanced daily in between. A unit test checks that changing future returns cannot change
+an earlier decision.
+
+### Limitations
+
 - **Survivorship bias.** The universe is today's large caps.
-- **Benchmark.** OMXS30 (`^OMX`) is a price index, so it excludes dividends, while stock returns include them.
-  This understates the benchmark by roughly its dividend yield.
-- **Risk-free rate** is a single user-set assumption (default 2%), not a historical rate series.
-- No transaction costs, taxes or FX hedging. Not investment advice.
+- **Risk-free rate** is a single assumption (default 2%), not a historical rate series.
+- No transaction costs, taxes or FX hedging. For education only, not investment advice.
 
-## Run it yourself
+## Engineering
 
-**Web dashboard**
+| | What it is | Stack |
+|---|---|---|
+| **Web dashboard** (`app/`, `components/`, `lib/`) | Interactive site; all analysis runs in the browser | Next.js, TypeScript, Recharts, Vercel |
+| **Analysis package** (`analysis/`) | The same analysis as a Python package, CLI and Jupyter notebook | Python, pandas, NumPy, yfinance, Matplotlib |
+
+The two implementations share `universe.json` and are tested against a shared fixture (`tests/fixture.json`)
+so their metrics agree to nine decimal places. Both test suites run on every push (GitHub Actions).
 
 ```bash
+# Web dashboard
 npm install
-npm run dev              # http://localhost:3000, live Yahoo data
-MOCK_DATA=1 npm run dev  # offline, synthetic prices
-npm test                 # unit tests + cross-check against the Python numbers
-```
+npm run dev                          # http://localhost:3000, live Yahoo data
+PRICES_DIR=./snapshot npm run dev    # serve prices_<range>.json snapshots offline
+MOCK_DATA=1 npm run dev              # synthetic prices
+npm test
 
-**Python analysis**
-
-```bash
+# Python analysis
 cd analysis
 pip install -r requirements.txt
-python main.py                 # prints the ranked table, saves charts + metrics.csv to docs/
-python main.py --period 3y --all --rf 0.025
-jupyter notebook notebook.ipynb
+python main.py                       # ranked table, charts and metrics.csv in docs/
+python main.py --period 10y --all --rf 0.025
+jupyter notebook notebook.ipynb      # walkthrough incl. the walk-forward test
 pytest
 ```
 
-## Project structure
-
 ```
-universe.json            stock list shared by both implementations
-app/                     Next.js pages + /api/prices (cached Yahoo Finance proxy)
-components/Dashboard.tsx UI and charts
-lib/metrics.ts           risk metrics, calendar alignment, SEK conversion
-lib/optimizer.ts         Monte Carlo mean-variance optimiser
-analysis/nordic_screener Python package: data.py, metrics.py, optimizer.py, plots.py
-analysis/main.py         CLI
-analysis/notebook.ipynb  walkthrough notebook
-tests/                   TypeScript tests + shared fixture
+universe.json             stock list shared by both implementations
+app/                      Next.js page, /api/prices (cached Yahoo proxy), link-preview image
+components/               dashboard, charts and sections
+lib/metrics.ts            risk metrics, calendar alignment, SEK conversion
+lib/optimizer.ts          Monte Carlo + local-search mean-variance optimiser
+lib/backtest.ts           walk-forward backtest
+lib/stress.ts             drawdown episodes, calendar-year returns
+lib/analyze.ts            pipeline, total-return benchmark, key findings
+analysis/nordic_screener  Python package (data, metrics, optimizer, backtest, plots)
+tests/                    TypeScript tests + shared fixture
 ```
 
-## Ideas for next steps
+## Next steps
 
-- Walk-forward (out-of-sample) backtest of the optimiser
-- Total-return benchmark (OMXS30 GI) and a historical risk-free series (STIBOR / Swedish T-bills)
+- Covariance shrinkage (Ledoit-Wolf) and return shrinkage, to see if they close the gap to equal weight
+- A historical risk-free series (Swedish T-bills) instead of a constant
 - Factor exposures (size, value, momentum) for each stock
-- Covariance shrinkage (Ledoit-Wolf) for more stable weights
 
 ---
-Built with Python, TypeScript and Claude Code. Data from Yahoo Finance, for education and demonstration only.
+Built by [Daniel Engerby](https://www.linkedin.com/in/danielengerby/) with Python, TypeScript and Claude Code.
+Data from Yahoo Finance, for education and demonstration only.

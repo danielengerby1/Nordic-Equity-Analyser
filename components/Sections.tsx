@@ -217,9 +217,12 @@ export function Methodology({ a }: { a: Analysis }) {
       <h2>Methodology &amp; caveats</h2>
       <dl>
         <dt>Data</dt>
-        <dd>Daily adjusted closes from Yahoo Finance (dividends reinvested). Benchmark: {a.bench.totalReturn
+        <dd>Daily adjusted closes from Yahoo Finance (dividends reinvested). Benchmark: {a.bench.method === "etf"
           ? <>OMXS30 total return, proxied by the {BENCHMARK_TR.note}.</>
-          : <>OMXS30 price index (the total-return series was unavailable), which excludes dividends and understates the index by roughly its dividend yield.</>}</dd>
+          : a.bench.method === "hybrid"
+            ? <>OMXS30 total return. Yahoo&apos;s history for the {BENCHMARK_TR.note} has gaps in this period, so the benchmark
+              uses the index&apos;s daily moves plus a constant dividend drift calibrated to the ETF&apos;s growth.</>
+            : <>OMXS30 price index (the total-return series was unavailable), which excludes dividends and understates the index by roughly its dividend yield.</>}</dd>
         <dt>Currency</dt>
         <dd>Danish, Norwegian and Finnish stocks are converted to SEK with daily FX rates, so a Swedish investor&apos;s
           currency risk is included. Untick &quot;Convert to SEK&quot; to compare in local currency.</dd>

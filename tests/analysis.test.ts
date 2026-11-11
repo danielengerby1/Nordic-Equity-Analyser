@@ -46,3 +46,25 @@ describe("stress", () => {
     expect(ys.map((y) => y.partial)).toEqual([true, false, true]);
   });
 });
+
+import { totalReturnPath } from "../lib/analyze";
+describe("totalReturnPath", () => {
+  const dates = Array.from({ length: 400 }, (_, i) => `d${String(i).padStart(4, "0")}`);
+  const index = dates.map((_, i) => 100 * (1 + 0.0002) ** i);
+  it("uses the ETF directly when coverage is complete", () => {
+    const tr = Object.fromEntries(dates.map((d, i) => [d, 50 * (1 + 0.0003) ** i]));
+    const r = totalReturnPath(dates, index, tr)!;
+    expect(r.method).toBe("etf");
+    expect(r.path.at(-1)).toBeCloseTo(1.0003 ** 399, 10);
+  });
+  it("falls back to index moves + calibrated drift when the ETF has gaps", () => {
+    const tr = Object.fromEntries(dates.filter((_, i) => i % 3 === 0).map((d) => [d, 50 * 1.0003 ** dates.indexOf(d)]));
+    const r = totalReturnPath(dates, index, tr)!;
+    expect(r.method).toBe("hybrid");
+    // Between the ETF's first and last observation the hybrid matches the ETF's growth exactly.
+    expect(r.path[399] / r.path[0]).toBeCloseTo(1.0003 ** 399, 8);
+  });
+  it("returns null without ETF data", () => {
+    expect(totalReturnPath(dates, index, undefined)).toBeNull();
+  });
+});

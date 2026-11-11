@@ -61,7 +61,7 @@ def metrics_table(prices: pd.DataFrame, bench: pd.Series, rf: float, names: dict
     """One row per stock plus the benchmark, ranked by Sharpe."""
     rows = {t: compute_metrics(prices[t], bench, rf) for t in prices.columns}
     df = pd.DataFrame(rows).T.sort_values("sharpe", ascending=False)
-    df.loc["OMXS30 (benchmark)"] = compute_metrics(bench, bench, rf)
+    df.loc["OMXS30 total return"] = compute_metrics(bench, bench, rf)
     if names:
         df.index = [names.get(i, i) for i in df.index]
     return df
