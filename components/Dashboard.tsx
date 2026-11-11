@@ -412,7 +412,8 @@ function Methodology() {
           largest peak-to-trough fall. Beta is measured against OMXS30.</dd>
         <dt>Optimiser</dt>
         <dd>Long-only, fully invested mean-variance portfolios drawn by Monte Carlo sampling (seeded, so results are
-          reproducible). It reports the max-Sharpe and min-volatility portfolios found.</dd>
+          reproducible), with the best max-Sharpe and min-volatility samples polished by a local search. The frontier
+          plots arithmetic expected return, which exceeds CAGR for volatile stocks (volatility drag).</dd>
         <dt>Limitations</dt>
         <dd>Everything is backward-looking and in-sample: the &quot;best&quot; portfolio is chosen with hindsight. The
           universe is today&apos;s large caps (survivorship bias). No transaction costs or taxes. Not investment advice.</dd>

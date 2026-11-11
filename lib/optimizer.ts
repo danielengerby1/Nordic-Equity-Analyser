@@ -67,9 +67,32 @@ export function optimize(returns: number[][], rf: number, samples = 4000, seed =
     if (k % 2 === 1) { w = w.map((x) => x ** 4); const s = w.reduce((a, b) => a + b, 0); w = w.map((x) => x / s); }
     cloud.push(portfolioStats(w, mu, cov, rf));
   }
-  const maxSharpe = cloud.reduce((a, b) => (b.sharpe > a.sharpe ? b : a));
-  const minVol = cloud.reduce((a, b) => (b.vol < a.vol ? b : a));
-  return { cloud, maxSharpe, minVol, equal };
+  const bestSample = cloud.reduce((a, b) => (b.sharpe > a.sharpe ? b : a));
+  const lowSample = cloud.reduce((a, b) => (b.vol < a.vol ? b : a));
+  // Random sampling gets close but thins out in high dimensions, so polish the best
+  // samples with a local search that shifts weight between pairs of stocks.
+  const maxSharpe = refine(bestSample.weights, (w) => portfolioStats(w, mu, cov, rf).sharpe, rand);
+  const minVol = refine(lowSample.weights, (w) => -portfolioStats(w, mu, cov, rf).vol, rand);
+  const ms = portfolioStats(maxSharpe, mu, cov, rf), mv = portfolioStats(minVol, mu, cov, rf);
+  cloud.push(ms, mv);
+  return { cloud, maxSharpe: ms, minVol: mv, equal };
+}
+
+/** Greedy pairwise weight transfer; keeps weights long-only and summing to 1. */
+export function refine(w0: number[], score: (w: number[]) => number, rand: () => number, iters = 4000): number[] {
+  const n = w0.length;
+  let best = w0.slice(), bs = score(best);
+  for (let k = 0; k < iters; k++) {
+    const i = Math.floor(rand() * n), j = Math.floor(rand() * n);
+    if (i === j) continue;
+    const d = Math.min(best[i], 0.2 * (1 - k / iters) + 0.001);
+    if (d <= 0) continue;
+    const cand = best.slice();
+    cand[i] -= d; cand[j] += d;
+    const s = score(cand);
+    if (s > bs) { best = cand; bs = s; }
+  }
+  return best;
 }
 
 /** Daily-rebalanced portfolio value path from asset returns and fixed weights. */

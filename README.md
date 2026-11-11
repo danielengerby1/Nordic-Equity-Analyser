@@ -21,6 +21,35 @@ It comes in two parts:
 Both implement identical metric definitions, and a shared test fixture (`tests/fixture.json`) checks that the
 TypeScript and Python numbers agree to nine decimal places.
 
+## Results: 5 years to 11 Nov 2026 (SEK, rf = 2%)
+
+| | CAGR | Volatility | Sharpe | Sortino | Max DD | Beta |
+|:--|--:|--:|--:|--:|--:|--:|
+| Investor | 18.0% | 20.2% | 0.81 | 1.18 | −30.6% | 1.05 |
+| DNB Bank | 17.1% | 22.5% | 0.72 | 0.99 | −18.2% | 0.57 |
+| Volvo | 16.5% | 25.1% | 0.65 | 0.95 | −28.5% | 1.16 |
+| Equinor | 20.1% | 34.8% | 0.64 | 0.92 | −40.1% | −0.09 |
+| Sampo | 12.7% | 18.8% | 0.62 | 0.87 | −16.0% | 0.43 |
+| Assa Abloy | 9.9% | 22.9% | 0.43 | 0.63 | −27.1% | 1.06 |
+| Atlas Copco | 8.5% | 29.8% | 0.35 | 0.52 | −42.1% | 1.43 |
+| Kone | 5.0% | 29.3% | 0.24 | 0.37 | −33.7% | 0.73 |
+| DSV | 1.1% | 32.0% | 0.13 | 0.19 | −39.8% | 0.89 |
+| Novo Nordisk | −1.8% | 39.8% | 0.11 | 0.15 | −77.9% | 0.37 |
+| *OMXS30 (price index)* | *7.4%* | *16.6%* | *0.39* | *0.56* | *−26.9%* | *1.00* |
+
+**Takeaways**
+- Best risk-adjusted performer was **Investor**: index-like beta, but more than double OMXS30's return.
+- **Equinor** had the highest CAGR but needed 35% volatility to get it. Its near-zero beta to OMXS30 makes it a
+  strong diversifier, which is why the optimiser gives it a large weight.
+- **Novo Nordisk** went from star to worst performer: a 78% drawdown in SEK. Its frontier dot sits at about +7%
+  "expected" (arithmetic) return despite a negative CAGR. The gap is volatility drag.
+- The max-Sharpe mix (Investor, Equinor, Sampo, DNB, Volvo) reached a Sharpe of about 1.1 at lower volatility than
+  OMXS30, but those weights were chosen with hindsight (see Limitations).
+
+![Growth of 1 SEK](docs/performance.png)
+![Efficient frontier](docs/frontier.png)
+![Correlation heatmap](docs/correlation.png)
+
 ## What it does
 
 1. **Collects data**: daily adjusted closes (dividends reinvested) for 21 large caps across Stockholm,
@@ -52,8 +81,14 @@ volatile returns it overstates real growth: +60% followed by −50% has a positi
 money. The unit tests include exactly this case.
 
 **Optimiser.** Long-only, fully invested mean-variance portfolios drawn by seeded Monte Carlo sampling (flat
-Dirichlet, plus sharpened samples to reach the concentrated edges of the frontier). A quadratic solver would
-find the exact optimum, but sampling keeps the method transparent and shows the whole feasible set.
+Dirichlet, plus sharpened samples to reach the concentrated edges of the frontier). With 20+ stocks, random
+samples thin out near the optimum, so the best max-Sharpe and min-volatility samples are polished with a local
+search that shifts weight between pairs of stocks. Sampling keeps the method transparent and draws the whole
+feasible set, which a quadratic solver would not.
+
+**Calendar detail.** FX trades on Sundays; equities don't. The trading calendar is built from equity dates
+only (FX is forward-filled onto it), otherwise every stock would get fake zero-return Sundays that understate
+volatility and correlation.
 
 ### Limitations (read before drawing conclusions)
 

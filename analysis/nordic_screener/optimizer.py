@@ -28,12 +28,37 @@ def optimize(returns: pd.DataFrame, rf: float, samples: int = 4000, seed: int = 
     sharpe = (ret - rf) / vol
     cloud = pd.DataFrame({"ret": ret, "vol": vol, "sharpe": sharpe})
 
-    def pick(i: int) -> dict:
-        return {"ret": ret[i], "vol": vol[i], "sharpe": sharpe[i],
-                "weights": pd.Series(w[i], index=returns.columns)}
+    def stats(x: np.ndarray) -> dict:
+        r, v = float(x @ mu), float(np.sqrt(x @ cov @ x))
+        return {"ret": r, "vol": v, "sharpe": (r - rf) / v, "weights": pd.Series(x, index=returns.columns)}
 
-    return {"cloud": cloud, "max_sharpe": pick(int(sharpe.argmax())),
-            "min_vol": pick(int(vol.argmin())), "equal": pick(n)}
+    # Random sampling thins out in high dimensions; polish the best samples with a local search.
+    best = refine(w[int(sharpe.argmax())], lambda x: stats(x)["sharpe"], rng)
+    low = refine(w[int(vol.argmin())], lambda x: -stats(x)["vol"], rng)
+    ms, mv = stats(best), stats(low)
+    cloud = pd.concat([cloud, pd.DataFrame([{k: d[k] for k in ("ret", "vol", "sharpe")} for d in (ms, mv)])],
+                      ignore_index=True)
+    return {"cloud": cloud, "max_sharpe": ms, "min_vol": mv, "equal": stats(w[n])}
+
+
+def refine(w0: np.ndarray, score, rng: np.random.Generator, iters: int = 4000) -> np.ndarray:
+    """Greedy pairwise weight transfer; keeps weights long-only and summing to 1."""
+    best, bs = w0.copy(), score(w0)
+    n = len(w0)
+    for k in range(iters):
+        i, j = rng.integers(n, size=2)
+        if i == j:
+            continue
+        d = min(best[i], 0.2 * (1 - k / iters) + 0.001)
+        if d <= 0:
+            continue
+        cand = best.copy()
+        cand[i] -= d
+        cand[j] += d
+        s = score(cand)
+        if s > bs:
+            best, bs = cand, s
+    return best
 
 
 def portfolio_path(prices: pd.DataFrame, weights: pd.Series) -> pd.Series:
