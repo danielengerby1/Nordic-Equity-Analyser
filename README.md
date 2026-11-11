@@ -2,7 +2,7 @@
 
 **Automated Nordic equity screener and risk-adjusted portfolio optimizer, in SEK.**
 
-**Live dashboard: [nordic-equity-risk-analyzer.vercel.app](https://nordic-equity-risk-analyzer.vercel.app)**
+**Live dashboard: [nordic-equity-analyser.vercel.app](https://nordic-equity-analyser.vercel.app)**
 
 ## Why I built it
 
